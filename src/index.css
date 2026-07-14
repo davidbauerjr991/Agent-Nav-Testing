@@ -1,0 +1,108 @@
+@import '../../lyra-ui/src/styles/lyra-tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Base resets ── */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  color: var(--lyra-color-fg-default);
+  background: var(--lyra-color-bg-surface-shell);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Theme switch fade ──
+   Toggling [data-theme] on <html> swaps every color token instantly, which reads as an
+   abrupt flash. This fallback transition smooths that swap for any element that doesn't
+   already declare its own transition (e.g. Tailwind's transition-colors utilities) —
+   those keep their own faster, more specific timing since class selectors win over `*`. */
+*, *::before, *::after {
+  transition: background-color 300ms ease, border-color 300ms ease, color 300ms ease,
+    fill 300ms ease, stroke 300ms ease, box-shadow 300ms ease;
+}
+
+/* ── Option05: header nav items opening inline in the content area ──
+   Option05Page.tsx opens Home/Notifications/Conversations/Schedule/Screen
+   Pop/Ask AI by swapping the main content area (like Settings/Search
+   already did) rather than as a separate overlay — see `renderActivePage`
+   in Option05Page.tsx. Its "full" mode (no assignment open, filling the
+   whole content column with nothing to dock beside) hides the underlying
+   lyra-ui components' (`DraggablePanel`, `AgentNotifications`) own grip/
+   dock/undock chrome via this class, so it reads as plain, fixed content
+   rather than something the agent could accidentally float or dock
+   elsewhere. Its "docked" mode (the right panel, alongside an open
+   assignment) deliberately does NOT get this class — that one's chrome
+   stays visible and wired to real dock/undock/drag state (see
+   `rightPanelVariant` in Option05Page.tsx), per instruction. Scoped to
+   this one class (not lyra-ui itself, and not any of this app's *other*
+   Option pages' DraggablePanel instances) so nothing else is affected. */
+.option05-inline-panel button[aria-label="Undock"],
+.option05-inline-panel button[aria-label="Dock to side"] {
+  display: none;
+}
+
+/* draggable.tsx's docked-mode left-edge resize handle
+   (`aria-hidden="true"` + `cursor-ew-resize`, no other distinguishing prop)
+   renders unconditionally — it isn't gated by `showHeaderControls` the way
+   the grip/dock button chrome above is, so hiding *that* doesn't hide
+   this. Per instruction, "full" mode (no assignment open, filling the
+   whole content column with nothing to its right to resize into at all)
+   shouldn't be draggable-from-the-left either — there's nothing on the
+   other side of that edge to grow into. */
+.option05-inline-panel [aria-hidden="true"].cursor-ew-resize {
+  display: none;
+}
+
+/* Every one of these panels also has a closability rule (see
+   `renderActivePage`'s own comment in Option05Page.tsx): its close button
+   stays mounted at all times (`onClose` is always passed, never
+   conditionally omitted) but is hidden via `display: none` when
+   `.option05-not-closable` is added, rather than by omitting the prop.
+   `[aria-label^="Close "]` matches regardless of which page's title is
+   showing ("Close Home", "Close Notifications", "Close Settings", ...),
+   so this one rule covers all of them. */
+.option05-not-closable button[aria-label^="Close "] {
+  display: none;
+}
+
+/* Per instruction, every app-header nav icon in Option05 uses the same
+   persistent "primary blue" active background as Home
+   (`bg-lyra-bg-active-moderate`/`text-lyra-fg-active-strong`) instead of a
+   transient hover-only tint. The Conversations/Schedule slots and Ask AI
+   are hand-rolled buttons in Option05Page.tsx, so they just build that
+   Tailwind class pair directly — but `NotificationsBell` (lyra-ui)
+   hardcodes its own `open && "bg-lyra-state-hover"` internally with no
+   prop to override just that piece, so its active look is layered on here
+   instead via the same CSS-override pattern used elsewhere in this file.
+   `[aria-expanded="true"]` is the bell's own trigger button's state
+   attribute while its notifications view is active; higher specificity
+   than the component's own hover/active/conditional classes (one extra
+   type selector) so it wins even while hovered/pressed, without
+   `!important`. Scoped to this one class (not lyra-ui itself, and not any
+   of this app's *other* Option pages' `NotificationsBell` instances) so
+   nothing else is affected. */
+.option05-primary-active-icon button[aria-expanded="true"] {
+  background-color: var(--lyra-color-bg-active-moderate);
+  color: var(--lyra-color-fg-active-strong);
+}
+
+/* ── Scrollbar styling ── */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: #c1c7cd;
+  border-radius: 3px;
+}
