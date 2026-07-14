@@ -1,3 +1,6 @@
+const fs = require("fs");
+const path = require("path");
+
 // Single source of truth for every consumer's color token map — see
 // lyra-ui/tailwind-tokens.cjs's own doc comment for why this is a plain
 // relative `require` (tailwind.config.js is loaded by Tailwind's own config
@@ -7,7 +10,17 @@
 // "selected channel" highlight and 8/10 customer avatar colors to silently
 // render with zero CSS in this app (see lyra-ui/PROJECT_SUMMARY.md's
 // "Cross-Repo Sync" section for the incident).
-const lyraColors = require("../lyra-ui/tailwind-tokens.cjs");
+//
+// Same live-sibling-checkout-with-vendored-fallback as vite.config.ts:
+// local dev reads the real sibling `lyra-ui` repo when it's present; CI/Pages
+// builds (which only have this repo cloned) fall back to the vendored
+// snapshot in vendor/lyra-ui. See vendor/lyra-ui/README.md.
+const siblingLyraUi = path.resolve(__dirname, "../lyra-ui");
+const lyraUiRoot = fs.existsSync(siblingLyraUi)
+  ? siblingLyraUi
+  : path.resolve(__dirname, "./vendor/lyra-ui");
+
+const lyraColors = require(path.join(lyraUiRoot, "tailwind-tokens.cjs"));
 
 /** @type {import('tailwindcss').Config} */
 export default {
@@ -15,7 +28,7 @@ export default {
   content: [
     "./index.html",
     "./src/**/*.{ts,tsx,js,jsx}",
-    "../lyra-ui/src/**/*.{ts,tsx}",
+    path.join(lyraUiRoot, "src/**/*.{ts,tsx}"),
   ],
   theme: {
     extend: {

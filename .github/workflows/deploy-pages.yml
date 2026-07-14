@@ -1,0 +1,70 @@
+name: Deploy to GitHub Pages
+
+# Builds the Vite app and publishes it to GitHub Pages. Runs on every push to
+# main, plus lets you re-run it manually from the Actions tab without a new
+# commit (workflow_dispatch).
+#
+# This repo's Vite/Tailwind config normally aliases `@nicecxone/lyra-ui` to a
+# sibling checkout on disk (for live-source local dev) — that sibling doesn't
+# exist here, so the config falls back to the vendored snapshot committed at
+# vendor/lyra-ui. See vendor/lyra-ui/README.md.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Only one deploy at a time; a new push cancels an in-flight one rather than
+# queuing behind it.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        # build:pages runs `vite build` only (skips the `tsc -b` gate that
+        # `npm run build` normally chains first) — this app has a number of
+        # pre-existing, unrelated TypeScript errors (see CLAUDE.md) that
+        # `vite build`'s esbuild-based type-stripping doesn't hit, matching
+        # how this repo has always verified its own production builds.
+        # GITHUB_PAGES=true switches vite.config.ts's `base` to
+        # "/Agent-Nav-Testing/" so assets resolve correctly under the
+        # project-site subpath instead of domain root.
+        run: npm run build:pages
+        env:
+          GITHUB_PAGES: "true"
+
+      - name: Upload build artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

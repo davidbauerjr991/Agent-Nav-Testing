@@ -1,4 +1,9 @@
-@import '../../lyra-ui/src/styles/lyra-tokens.css';
+/* Bare specifier (not a hardcoded "../../lyra-ui" relative path) so Vite's
+   `@nicecxone/lyra-ui/styles` alias resolves it — that alias points at the
+   live sibling checkout in local dev, and falls back to the vendored copy
+   in vendor/lyra-ui when the sibling isn't present (e.g. in CI/Pages
+   builds). See vite.config.ts. */
+@import '@nicecxone/lyra-ui/styles';
 
 @tailwind base;
 @tailwind components;
