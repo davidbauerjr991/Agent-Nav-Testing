@@ -11,6 +11,25 @@
       rel="stylesheet"
     />
     <title>Agent Next Gen</title>
+    <script>
+      // Matching half of public/404.html's redirect (see that file's
+      // comment) — decodes the original attempted path back out of the
+      // query string and restores it via history.replaceState, before
+      // React ever mounts, so App.tsx's router sees the real intended path
+      // (e.g. /Agent-Nav-Testing/option-02) rather than "/".
+      (function (l) {
+        if (l.search[1] === "/") {
+          var decoded = l.search
+            .slice(1)
+            .split("&")
+            .map(function (s) {
+              return s.replace(/~and~/g, "&");
+            })
+            .join("?");
+          window.history.replaceState(null, null, l.pathname.slice(0, -1) + decoded + l.hash);
+        }
+      })(window.location);
+    </script>
   </head>
   <body>
     <div id="root"></div>

@@ -1,18 +1,16 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { cn } from "@/lib/utils";
 import { PlaceholderChat } from "./PlaceholderChat";
 import {
   AppHeader,
-  AppName,
-  AppMenu,
   AiPanel,
   DraggablePanel,
   NotificationsBell,
   AgentNotifications,
   AgentProfile,
   Container,
-  Panel,
+  SidePanel,
+  InteriorPanel,
   PanelPinButton,
   PageHeader,
   AiSparkleIcon,
@@ -32,7 +30,6 @@ import {
   type InteractionChannel,
   type ChannelType,
   type AgentStatus,
-  type AppMenuGroup,
   type AgentNotification,
   type DraggableVariant,
 } from "@nicecxone/lyra-ui";
@@ -60,32 +57,8 @@ import {
   Landmark,
   Ticket,
   GripVertical,
+  LayoutDashboard,
 } from "lucide-react";
-
-/* ── App menu data ──
-   Placeholder options for this prototype — four flat, unlabeled-role
-   entries instead of lyra-ui's reference groups. Each one is a real nav
-   target (built here, not a static constant, since it needs `onNavigate` in
-   scope): Option 01/02/03/04/05 each jump straight to their own page
-   (Option01Page/Option02Page/Option03Page/Option04Page/Option05Page —
-   independent,
-   separately editable duplicates of this same page's content, per the
-   task) — a plain page swap, no login gate or welcome modal anywhere in
-   this prototype. "Option 03" is marked active here since this file *is*
-   that page. */
-function buildAppMenuGroups(onNavigate?: (page: Page) => void): AppMenuGroup[] {
-  return [
-    {
-      items: [
-        { label: "Option 01", onClick: () => onNavigate?.("option-01") },
-        { label: "Option 02", onClick: () => onNavigate?.("option-02") },
-        { label: "Option 03", active: true, onClick: () => onNavigate?.("option-03") },
-        { label: "Option 04", onClick: () => onNavigate?.("option-04") },
-        { label: "Option 05", onClick: () => onNavigate?.("option-05") },
-      ],
-    },
-  ];
-}
 
 /* ── Create New → Outbound config ──
    Mirrors lyra-ui's CreateNew "Create New → Outbound" story (see
@@ -385,7 +358,7 @@ const PINNABLE_NAV_META: Record<PinnableNavId, { label: string; icon: React.Reac
 type StaticPageId = "home" | "settings" | "search" | "directory" | PinnableNavId;
 
 const STATIC_PAGE_LABELS: Record<StaticPageId, string> = {
-  home: "Home",
+  home: "Dashboard",
   settings: "Settings",
   search: "Search",
   directory: "Directory",
@@ -685,15 +658,9 @@ export function Option03Page({
   const [notifications, setNotifications] = useState<AgentNotification[]>([]);
   const [agentStatus, setAgentStatus] = useState<AgentStatus>("offline");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [appMenuOpen, setAppMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(
     () => document.documentElement.getAttribute("data-theme") === "dark"
   );
-
-  const appMenuGroups = buildAppMenuGroups((page) => {
-    setAppMenuOpen(false);
-    onNavigate?.(page);
-  });
 
   const handleDarkModeToggle = () => {
     setDarkMode((prev) => {
@@ -819,7 +786,6 @@ export function Option03Page({
   }, []);
 
   const isNavNarrow = windowWidth < 1280;
-  const isCompactHeader = windowWidth < 760;
 
   // Auto-collapse the expanded nav when viewport drops below 1280px
   useEffect(() => {
@@ -1414,32 +1380,19 @@ export function Option03Page({
   return (
     <div className="flex flex-col h-screen bg-lyra-bg-surface-shell overflow-hidden animate-in fade-in-0 duration-500">
 
-      {/* ── App Header ── */}
+      {/* ── App Header ──
+          Blind-test requirement: no in-app way to tell which "option"
+          variant this is, or switch to another one — a plain, static,
+          non-interactive brand label (no dropdown, no chevron, no popover),
+          unlike lyra-ui's own `AppName` (always a button with a hardcoded
+          chevron — see its source's `!compact` branch — so it's hand-built
+          here instead rather than fighting that with CSS). Each variant is
+          only ever reached via its own direct URL (see App.tsx's router). */}
       <AppHeader
         appName={
-          <PopoverPrimitive.Root open={appMenuOpen} onOpenChange={setAppMenuOpen}>
-            <PopoverPrimitive.Trigger asChild>
-              <AppName
-                name="Agent Nav Test Option 03"
-                compact={isCompactHeader}
-                aria-expanded={appMenuOpen}
-              />
-            </PopoverPrimitive.Trigger>
-            <PopoverPrimitive.Portal>
-              <PopoverPrimitive.Content
-                side="bottom"
-                align="start"
-                sideOffset={6}
-                onOpenAutoFocus={(e: Event) => e.preventDefault()}
-                className="z-[9999] animate-in fade-in-0 slide-in-from-top-2 duration-150 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=closed]:duration-100"
-              >
-                <AppMenu
-                  groups={appMenuGroups}
-                  header={isCompactHeader ? "Agent Nav Test Option 03" : undefined}
-                />
-              </PopoverPrimitive.Content>
-            </PopoverPrimitive.Portal>
-          </PopoverPrimitive.Root>
+          <span className="inline-flex items-center gap-2.5 rounded-lyra-sm p-2 lyra-body-lg-emphasis text-lyra-fg-default">
+            Agent Nav Test
+          </span>
         }
         actions={
           <>
@@ -1678,8 +1631,8 @@ export function Option03Page({
                     { icon: React.ReactNode; label: string; active: boolean; onClick: () => void }
                   > = {
                     home: {
-                      icon: <Home className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} />,
-                      label: "Home",
+                      icon: <LayoutDashboard className="h-4 w-4 flex-shrink-0" strokeWidth={1.5} />,
+                      label: "Dashboard",
                       active: activeStaticPage === "home" && !activeInteraction,
                       onClick: () => { setActiveInteractionId(null); setActiveStaticPage("home"); },
                     },
@@ -1914,21 +1867,20 @@ export function Option03Page({
                 hover flyout.
 
                 Always mounted (no `assignmentsPanelVisible &&` gate on this
-                element itself) — Panel's own open/close width transition
+                element itself) — SidePanel's own open/close width transition
                 only animates on an already-mounted node; conditionally
-                rendering the whole `<Panel>` away instead of just letting
+                rendering the whole `<SidePanel>` away instead of just letting
                 `open` go false made it pop in/out instantly with no
                 animation whenever there were zero assignments (the
                 regression this comment is fixing). `open={
                 assignmentsPanelVisible}` still drives the true "fully
                 hidden" case (nothing toggled on, nothing to show as a
-                rail) — Panel's own inline-pinned branch forces width to 0
+                rail) — SidePanel's own inline-pinned branch forces width to 0
                 and drops its border exactly when `open` is false, same as
                 it always has. Resizing is disabled while collapsed —
                 dragging a 52px icon rail wider doesn't make sense. */}
             {showPanelToggle && (
-              <Panel
-                variant="side"
+              <SidePanel
                 side="left"
                 open={assignmentsPanelVisible}
                 pinned
@@ -1937,11 +1889,11 @@ export function Option03Page({
                 onWidthChange={setSidePanelWidth}
                 onResizeStateChange={setSidePanelResizing}
               >
-                {/* Hand-built in place of `headerTitle` — Panel's own header
+                {/* Hand-built in place of `headerTitle` — SidePanel's own header
                     only takes a plain string, which can't render the "(N
                     active)" count in the secondary text color the way
                     01/02's own Assignments label does. Same chrome as
-                    Panel's built-in header (ContainerHeader, `bordered`
+                    SidePanel's built-in header (ContainerHeader, `bordered`
                     off) otherwise: px-4 py-5, lyra-heading-md. */}
                 {assignmentsPanelOpen && (
                   <div className="px-4 py-5 shrink-0">
@@ -2019,7 +1971,7 @@ export function Option03Page({
                   );
                 })}
                 </div>
-              </Panel>
+              </SidePanel>
             )}
 
             {/* Content column: PageHeader + page body */}
@@ -2112,8 +2064,7 @@ export function Option03Page({
                       — no real transcript backend yet). */}
                   <div className="relative flex flex-1 overflow-hidden">
                     {showInteriorPanel && (
-                      <Panel
-                        variant="interior"
+                      <InteriorPanel
                         side="left"
                         open={customerInfoPanelOpen}
                         headerTitle="Customer Information"
@@ -2140,7 +2091,7 @@ export function Option03Page({
                         />
                       }
                       iconAriaHidden={false}
-                      title="Home"
+                      title="Dashboard"
                     />
                   )}
                   {/* Body row: main content + interior panel.
@@ -2151,8 +2102,7 @@ export function Option03Page({
                   <div className="relative flex flex-1 overflow-hidden">
                     <div className="flex-1 overflow-y-auto" />
                     {showInteriorPanel && (
-                      <Panel
-                        variant="interior"
+                      <InteriorPanel
                         side="right"
                         open={interiorPanelOpen}
                         headerTitle="Case Details"
@@ -2164,7 +2114,7 @@ export function Option03Page({
                           <Input label="Assignee" placeholder="Search agents" />
                           <Input label="Tags" placeholder="Add tags" />
                         </div>
-                      </Panel>
+                      </InteriorPanel>
                     )}
                   </div>
                 </>

@@ -1,18 +1,15 @@
 import React, { useState, useEffect, useMemo, useRef } from "react";
-import * as PopoverPrimitive from "@radix-ui/react-popover";
 import { cn } from "@/lib/utils";
 import { PlaceholderChat } from "./PlaceholderChat";
 import {
   AppHeader,
-  AppName,
-  AppMenu,
   AiPanel,
   DraggablePanel,
   NotificationsBell,
   AgentNotifications,
   AgentProfile,
   Container,
-  Panel,
+  InteriorPanel,
   CustomerInformationPanel,
   PanelPinButton,
   PageHeader,
@@ -34,7 +31,6 @@ import {
   type InteractionChannel,
   type ChannelType,
   type AgentStatus,
-  type AppMenuGroup,
   type AgentNotification,
   type DraggableVariant,
 } from "@nicecxone/lyra-ui";
@@ -61,31 +57,6 @@ import {
   CalendarClock,
   LayoutDashboard,
 } from "lucide-react";
-
-/* ── App menu data ──
-   Placeholder options for this prototype — four flat, unlabeled-role
-   entries instead of lyra-ui's reference groups. Each one is a real nav
-   target (built here, not a static constant, since it needs `onNavigate` in
-   scope): Option 01/02/03/04/05 each jump straight to their own page
-   (Option01Page/Option02Page/Option03Page/Option04Page/Option05Page —
-   independent,
-   separately editable duplicates of this same page's content, per the
-   task) — a plain page swap, no login gate or welcome modal anywhere in
-   this prototype. "Option 04" is marked active here since this file *is*
-   that page. */
-function buildAppMenuGroups(onNavigate?: (page: Page) => void): AppMenuGroup[] {
-  return [
-    {
-      items: [
-        { label: "Option 01", onClick: () => onNavigate?.("option-01") },
-        { label: "Option 02", onClick: () => onNavigate?.("option-02") },
-        { label: "Option 03", onClick: () => onNavigate?.("option-03") },
-        { label: "Option 04", active: true, onClick: () => onNavigate?.("option-04") },
-        { label: "Option 05", onClick: () => onNavigate?.("option-05") },
-      ],
-    },
-  ];
-}
 
 /* ── Create New → Outbound config ──
    Mirrors lyra-ui's CreateNew "Create New → Outbound" story (see
@@ -489,15 +460,9 @@ export function Option04Page({
   const [notifications, setNotifications] = useState<AgentNotification[]>([]);
   const [agentStatus, setAgentStatus] = useState<AgentStatus>("offline");
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [appMenuOpen, setAppMenuOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(
     () => document.documentElement.getAttribute("data-theme") === "dark"
   );
-
-  const appMenuGroups = buildAppMenuGroups((page) => {
-    setAppMenuOpen(false);
-    onNavigate?.(page);
-  });
 
   const handleDarkModeToggle = () => {
     setDarkMode((prev) => {
@@ -646,7 +611,6 @@ export function Option04Page({
   }, []);
 
   const isNavNarrow = windowWidth < 1280;
-  const isCompactHeader = windowWidth < 760;
 
   // Auto-collapse the expanded nav when viewport drops below 1280px
   useEffect(() => {
@@ -1267,32 +1231,19 @@ export function Option04Page({
   return (
     <div className="flex flex-col h-screen bg-lyra-bg-surface-shell overflow-hidden animate-in fade-in-0 duration-500">
 
-      {/* ── App Header ── */}
+      {/* ── App Header ──
+          Blind-test requirement: no in-app way to tell which "option"
+          variant this is, or switch to another one — a plain, static,
+          non-interactive brand label (no dropdown, no chevron, no popover),
+          unlike lyra-ui's own `AppName` (always a button with a hardcoded
+          chevron — see its source's `!compact` branch — so it's hand-built
+          here instead rather than fighting that with CSS). Each variant is
+          only ever reached via its own direct URL (see App.tsx's router). */}
       <AppHeader
         appName={
-          <PopoverPrimitive.Root open={appMenuOpen} onOpenChange={setAppMenuOpen}>
-            <PopoverPrimitive.Trigger asChild>
-              <AppName
-                name="Agent Nav Test Option 04"
-                compact={isCompactHeader}
-                aria-expanded={appMenuOpen}
-              />
-            </PopoverPrimitive.Trigger>
-            <PopoverPrimitive.Portal>
-              <PopoverPrimitive.Content
-                side="bottom"
-                align="start"
-                sideOffset={6}
-                onOpenAutoFocus={(e: Event) => e.preventDefault()}
-                className="z-[9999] animate-in fade-in-0 slide-in-from-top-2 duration-150 data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=closed]:slide-out-to-top-1 data-[state=closed]:duration-100"
-              >
-                <AppMenu
-                  groups={appMenuGroups}
-                  header={isCompactHeader ? "Agent Nav Test Option 04" : undefined}
-                />
-              </PopoverPrimitive.Content>
-            </PopoverPrimitive.Portal>
-          </PopoverPrimitive.Root>
+          <span className="inline-flex items-center gap-2.5 rounded-lyra-sm p-2 lyra-body-lg-emphasis text-lyra-fg-default">
+            Agent Nav Test
+          </span>
         }
         actions={
           <>
@@ -1771,8 +1722,7 @@ export function Option04Page({
                       {DESK_TAB_LABELS[activeDeskTab]} Page
                     </div>
                     {showInteriorPanel && (
-                      <Panel
-                        variant="interior"
+                      <InteriorPanel
                         side="right"
                         open={interiorPanelOpen}
                         headerTitle="Case Details"
@@ -1784,7 +1734,7 @@ export function Option04Page({
                           <Input label="Assignee" placeholder="Search agents" />
                           <Input label="Tags" placeholder="Add tags" />
                         </div>
-                      </Panel>
+                      </InteriorPanel>
                     )}
                   </div>
                 </>
